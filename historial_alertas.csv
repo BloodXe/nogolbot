@@ -1,1 +1,0 @@
-match_id,fecha_hora_alerta,timestamp_alerta,competicion,local,visita,goles_local_alerta,goles_visita_alerta,minuto_alerta,prob_modelo,umbral_usado,n_señales_extra,n_señales_posibles,resultado,goles_local_final,goles_visita_final,minuto_resolucion,fecha_hora_resolucion
