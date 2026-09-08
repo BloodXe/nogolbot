@@ -38,6 +38,19 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: DIAGNÓSTICO temporal - probar con headers de navegador
+        continue-on-error: true
+        run: |
+          echo "--- Sin headers (como probablemente hace pysofascore) ---"
+          curl -s -o /dev/null -w "status: %{http_code}\n" \
+            "https://www.sofascore.com/api/v1/sport/football/events/live"
+          echo "--- Con headers de navegador ---"
+          curl -s -o /dev/null -w "status: %{http_code}\n" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" \
+            -H "Accept: application/json" \
+            -H "Referer: https://www.sofascore.com/" \
+            "https://www.sofascore.com/api/v1/sport/football/events/live"
+
       - name: Ejecutar un ciclo del bot
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
