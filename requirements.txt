@@ -1,0 +1,2 @@
+pysofascore
+requests

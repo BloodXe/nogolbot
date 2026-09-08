@@ -1,0 +1,52 @@
+name: NoGolBot
+
+on:
+  # Disparo externo: cron-job.org llama a este evento cada 2 minutos
+  # vía la API de GitHub (POST .../actions/workflows/nogolbot.yml/dispatches).
+  # Esto no tiene el piso de 5 minutos del "schedule:" nativo de GitHub.
+  workflow_dispatch: {}
+
+  # Respaldo de baja frecuencia por si cron-job.org tiene una caída:
+  # así el bot igual corre un par de veces al día, y de paso esta
+  # actividad evita que GitHub desactive el workflow por 60 días sin
+  # movimiento en el repo. El minuto 17 es a propósito (no en punto),
+  # para no caer justo en el pico de carga de GitHub a la hora exacta.
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nogolbot
+  # No cancela una corrida en curso si llega un disparo nuevo: lo pone
+  # en cola. Así ningún ciclo se pierde si dos disparos casi se pisan.
+  cancel-in-progress: false
+
+jobs:
+  ciclo:
+    runs-on: ubuntu-latest
+    # Si algo se cuelga (ej. SofaScore no responde), que no bloquee la
+    # cola de corridas siguientes por mucho tiempo.
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Ejecutar un ciclo del bot
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python nogolbot.py
+
+      - name: Guardar historial y estado en el repo
+        run: |
+          git config user.name "nogolbot-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add historial_alertas.csv nogolbot_estado.json
+          git diff --staged --quiet || git commit -m "sync [skip ci]"
+          git push
