@@ -47,6 +47,20 @@ jobs:
         run: |
           git config user.name "nogolbot-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add historial_alertas.csv nogolbot_estado.json
-          git diff --staged --quiet || git commit -m "sync [skip ci]"
-          git push
+          # historial_alertas.csv recién existe después de la PRIMERA
+          # alerta real (registrar_alerta() lo crea, no cada ciclo).
+          # Agregamos solo los archivos que existen en este momento
+          # para que "git add" no falle cuando el CSV todavía no nació.
+          archivos=""
+          for f in historial_alertas.csv nogolbot_estado.json; do
+            if [ -f "$f" ]; then
+              archivos="$archivos $f"
+            fi
+          done
+          if [ -n "$archivos" ]; then
+            git add $archivos
+            git diff --staged --quiet || git commit -m "sync [skip ci]"
+            git push
+          else
+            echo "Nada que guardar todavía (ni estado ni historial existen en disco)."
+          fi
